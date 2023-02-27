@@ -65,7 +65,7 @@ def expand_df_according_to_issn(df:pd.DataFrame):
 def convert_rankings_to_dict(df:pd.DataFrame):
     df = df.rename(columns=ranking_columns_to_dict)
 
-    return df.to_dict()
+    return df.to_dict('list')
 
 def get_SJR_rankings(ranking_filename:str):
     df = pd.read_csv(ranking_filename, sep=';')
@@ -90,17 +90,22 @@ def null_check_title(article_journal_title:str, title_in_journal_data:str):
     return article_journal_title
 
 def rank_articles_journals(df:pd.DataFrame, journal_data:dict):
+    updated_articles = {
+        df_title: [],
+        df_SJR: [],
+        df_SJR_quartile: [],
+        df_h_index: [],
+    }
     for _, article in df.iterrows():
         issn = article[df_issn].replace('-', '').strip()
-
         if issn in journal_data[dict_issn]:
             issn_position = journal_data[dict_issn].index(issn)
-            article[df_title] = null_check_title(article[df_title], journal_data[dict_title][issn_position])
-            article[df_SJR] = journal_data[dict_SJR][issn_position]
-            article[df_SJR_quartile] = journal_data[dict_SJR_quartile][issn_position]
-            article[df_h_index] = journal_data[dict_h_index][issn_position]
-    
-    df.to_csv('./data/scimago_rank_data_2021_p3.csv', index=False)
+            updated_articles[df_title].append(null_check_title(article[df_title], journal_data[dict_title][issn_position]))
+            updated_articles[df_SJR].append(journal_data[dict_SJR][issn_position])
+            updated_articles[df_SJR_quartile].append(journal_data[dict_SJR_quartile][issn_position])
+            updated_articles[df_h_index].append(journal_data[dict_h_index][issn_position])
+        
+    pd.DataFrame(updated_articles).to_csv('./data/scimago_rank_data_2021_p3.csv', index=False)
 
 def run(sjr_year:SJRYear):
     # does it make sense to only do this once and save the cleaned df?
